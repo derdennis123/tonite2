@@ -1,9 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
+import type Anthropic from '@anthropic-ai/sdk'
 
 let _anthropic: Anthropic | null = null
 
-function getAnthropic(): Anthropic {
+async function getAnthropic(): Promise<Anthropic> {
   if (!_anthropic) {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk')
     _anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!,
     })
@@ -55,7 +56,8 @@ Antwortformat als JSON:
   "includedValueAdds": ["Value-Add Name"] oder []
 }`
 
-  const message = await getAnthropic().messages.create({
+  const anthropic = await getAnthropic()
+  const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 500,
     system: systemPrompt,
