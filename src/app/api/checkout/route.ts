@@ -88,7 +88,8 @@ export async function POST(request: NextRequest) {
     ]
 
     // Create Stripe Checkout Session with Connected Account
-    const session = await getStripe().checkout.sessions.create({
+    const stripe = await getStripe()
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
