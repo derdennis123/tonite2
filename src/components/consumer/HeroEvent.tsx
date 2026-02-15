@@ -2,51 +2,61 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { formatPrice, formatDateTime, getScarcityText, getScarcityLevel } from '@/lib/utils/format'
+import { formatPrice, formatTime, getScarcityText, getScarcityLevel } from '@/lib/utils/format'
 import type { Event } from '@/types'
 
 interface HeroEventProps {
   event: Event & { venueName?: string }
 }
 
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=800&fit=crop&q=80'
+
 export function HeroEvent({ event }: HeroEventProps) {
+  const imageUrl = event.coverImageUrl || FALLBACK_IMAGE
   const remaining = event.contingentTotal - event.contingentSold
   const scarcityText = getScarcityText(remaining)
   const scarcityLevel = getScarcityLevel(remaining)
 
   return (
     <Link href={`/event/${event.slug}`} className="group block">
-      <div className="relative h-[70vh] min-h-[500px] max-h-[700px] overflow-hidden">
+      <div className="relative h-[55vh] min-h-[400px] max-h-[550px] overflow-hidden rounded-b-[2rem]">
         {/* Background Image */}
-        {event.coverImageUrl ? (
-          <Image
-            src={event.coverImageUrl}
-            alt={event.name}
-            fill
-            className="object-cover transition-transform duration-1000 group-hover:scale-105"
-            priority
-            sizes="100vw"
-          />
-        ) : (
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(135deg, #1A1A2E 0%, #0A0A0F 50%, #12121A 100%)',
-            }}
-          />
-        )}
+        <Image
+          src={imageUrl}
+          alt={event.name}
+          fill
+          className="object-cover transition-transform duration-1000 group-hover:scale-105"
+          priority
+          sizes="100vw"
+        />
 
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0A0A0F]/40 to-transparent" />
+        {/* Multi-layer gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#6C5CE7]/8 to-transparent" />
+
+        {/* Live indicator */}
+        <div className="absolute top-20 left-5">
+          <span
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold backdrop-blur-xl"
+            style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              color: '#FF453A',
+            }}
+          >
+            <span className="w-2 h-2 rounded-full bg-[#FF453A] animate-pulse" />
+            LIVE
+          </span>
+        </div>
 
         {/* Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 space-y-4">
+        <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
           {/* Scarcity */}
           {scarcityLevel !== 'available' && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold"
               style={{
-                background: 'rgba(255, 69, 58, 0.15)',
+                background: 'rgba(255, 69, 58, 0.12)',
                 color: '#FF453A',
                 border: '1px solid rgba(255, 69, 58, 0.2)',
               }}
@@ -56,17 +66,18 @@ export function HeroEvent({ event }: HeroEventProps) {
           )}
 
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            <p className="text-xs text-white/50 uppercase tracking-widest mb-1">Featured Event</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight">
               {event.name}
             </h2>
-            <p className="text-base md:text-lg text-[var(--text-secondary)]">
-              {event.venueName || 'Venue'} · {formatDateTime(event.datetime)}
+            <p className="text-sm text-white/50 mt-1.5">
+              {event.venueName} &middot; Heute, {formatTime(event.datetime)} Uhr
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <span
-              className="text-3xl font-bold"
+              className="text-2xl font-bold"
               style={{
                 background: 'linear-gradient(135deg, #6C5CE7, #A855F7)',
                 WebkitBackgroundClip: 'text',
@@ -80,7 +91,7 @@ export function HeroEvent({ event }: HeroEventProps) {
               className="inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-300 group-hover:scale-105"
               style={{
                 background: 'linear-gradient(135deg, #6C5CE7, #A855F7)',
-                boxShadow: '0 0 20px rgba(108, 92, 231, 0.3)',
+                boxShadow: '0 0 24px rgba(108, 92, 231, 0.4)',
               }}
             >
               Jetzt buchen
