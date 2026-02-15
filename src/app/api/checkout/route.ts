@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     ]
 
     // Create Stripe Checkout Session with Connected Account
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
