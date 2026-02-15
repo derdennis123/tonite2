@@ -2,24 +2,49 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const supabase = createClient()
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    // In production: call Supabase auth.signInWithOtp({ email })
-    setTimeout(() => {
-      setSent(true)
+    setError(null)
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      setError(error.message)
       setLoading(false)
-    }, 1000)
+      return
+    }
+
+    setSent(true)
+    setLoading(false)
   }
 
-  const handleGoogleLogin = () => {
-    // In production: call Supabase auth.signInWithOAuth({ provider: 'google' })
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      setError(error.message)
+    }
   }
 
   if (sent) {
@@ -30,7 +55,7 @@ export default function LoginPage() {
         </div>
         <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Prüfe deine E-Mails!</h1>
         <p className="text-base text-[var(--text-secondary)] max-w-sm">Wir haben dir einen Anmelde-Link an <span className="text-[var(--text-primary)] font-medium">{email}</span> geschickt.</p>
-        <button onClick={() => setSent(false)} className="mt-8 text-sm text-[var(--accent-primary)]">Andere E-Mail verwenden</button>
+        <button onClick={() => { setSent(false); setError(null) }} className="mt-8 text-sm text-[var(--accent-primary)]">Andere E-Mail verwenden</button>
       </div>
     )
   }
@@ -43,6 +68,13 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold tracking-wider mb-2" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A855F7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>TONITE</h1>
           <p className="text-sm text-[var(--text-secondary)]">Melde dich an für personalisierte Erlebnisse</p>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="p-3 rounded-xl text-sm text-red-400" style={{ background: 'rgba(255, 69, 58, 0.1)', border: '1px solid rgba(255, 69, 58, 0.2)' }}>
+            {error}
+          </div>
+        )}
 
         {/* Google Login */}
         <button onClick={handleGoogleLogin} className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-3 transition-all hover:bg-[var(--bg-glass-hover)]" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-primary)' }}>

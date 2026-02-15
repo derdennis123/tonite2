@@ -1,8 +1,28 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import type { User } from '@supabase/supabase-js'
 
 export function TopBar() {
+  const [user, setUser] = useState<User | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const initials = user?.email?.charAt(0).toUpperCase() ?? '?'
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
       <div
@@ -29,7 +49,7 @@ export function TopBar() {
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-widest">Dein Standort</span>
-            <span className="text-sm font-semibold text-[var(--text-primary)]">Essen, DE</span>
+            <span className="text-sm font-semibold text-[var(--text-primary)]">NRW, DE</span>
           </div>
         </div>
 
@@ -67,13 +87,23 @@ export function TopBar() {
             />
           </button>
           <Link
-            href="/profile"
+            href={user ? '/profile' : '/auth/login'}
             className="w-9 h-9 rounded-full flex items-center justify-center overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, #6C5CE7, #A855F7)',
+              background: user
+                ? 'linear-gradient(135deg, #6C5CE7, #A855F7)'
+                : 'rgba(255, 255, 255, 0.05)',
+              border: user ? undefined : '1px solid rgba(255, 255, 255, 0.08)',
             }}
           >
-            <span className="text-xs font-bold text-white">D</span>
+            {user ? (
+              <span className="text-xs font-bold text-white">{initials}</span>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            )}
           </Link>
         </div>
       </div>

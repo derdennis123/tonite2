@@ -1,176 +1,95 @@
 import { HeroEvent } from '@/components/consumer/HeroEvent'
 import { EventCard } from '@/components/consumer/EventCard'
 import { SearchBar } from '@/components/consumer/SearchBar'
+import { createClient } from '@/lib/supabase/server'
 import type { Event } from '@/types'
 
-// Unsplash images for mock events
-const MOCK_IMAGES = {
-  ignite: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop&q=80',
-  passion: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=800&h=600&fit=crop&q=80',
-  staunen: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=600&fit=crop&q=80',
-  electra: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&fit=crop&q=80',
-  cosmos: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop&q=80',
-  heroWide: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=800&fit=crop&q=80',
+// Fallback images when DB events have no cover image
+const FALLBACK_IMAGES: Record<string, string> = {
+  'ignite': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop&q=80',
+  'passion': 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=800&h=600&fit=crop&q=80',
+  'staunen': 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=600&fit=crop&q=80',
+  'electra': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&fit=crop&q=80',
+  'cosmos': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop&q=80',
 }
 
-// Mock events sorted by relevance (nearest date + closest venue first)
-const mockEvents: (Event & { venueName?: string; distanceKm?: number })[] = [
-  {
-    id: '1',
-    venueId: 'v1',
-    seriesId: null,
-    name: 'IGNITE \u2014 Die Variet\u00e9-Show',
-    slug: 'ignite-variete-show',
-    description: 'Eine atemberaubende Variet\u00e9-Show mit Weltklasse-Artisten, Magie und Live-Musik.',
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-    time: '19:30',
-    datetime: new Date(Date.now() + 86400000 + 70200000).toISOString(),
-    contingentTotal: 30,
-    contingentSold: 18,
-    contingentRemaining: 12,
-    minPrice: 35,
-    flashPrice: 49,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.30,
-    offerMinPrice: 35,
-    coverImageUrl: MOCK_IMAGES.heroWide,
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live',
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Variet\u00e9-Theater Essen',
-    distanceKm: 1.2,
-  },
-  {
-    id: '4',
-    venueId: 'v2',
-    seriesId: null,
-    name: 'ELECTRA \u2014 Die Neon-Show',
-    slug: 'electra-neon-show',
-    description: 'UV-Licht, Neon-Kost\u00fcme und atemberaubende Performances in einer einzigartigen Atmosph\u00e4re.',
-    date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-    time: '21:00',
-    datetime: new Date(Date.now() + 172800000 + 75600000).toISOString(),
-    contingentTotal: 20,
-    contingentSold: 17,
-    contingentRemaining: 3,
-    minPrice: 45,
-    flashPrice: 65,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.20,
-    offerMinPrice: 45,
-    coverImageUrl: MOCK_IMAGES.electra,
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live',
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Variet\u00e9-Theater Essen',
-    distanceKm: 1.2,
-  },
-  {
-    id: '2',
-    venueId: 'v1',
-    seriesId: null,
-    name: 'PASSION \u2014 Tanz & Akrobatik',
-    slug: 'passion-tanz-akrobatik',
-    description: 'Eine leidenschaftliche Show die Tanz, Akrobatik und Emotionen vereint.',
-    date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-    time: '20:00',
-    datetime: new Date(Date.now() + 259200000 + 72000000).toISOString(),
-    contingentTotal: 25,
-    contingentSold: 20,
-    contingentRemaining: 5,
-    minPrice: 39,
-    flashPrice: 55,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.25,
-    offerMinPrice: 39,
-    coverImageUrl: MOCK_IMAGES.passion,
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live',
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Variet\u00e9-Theater Essen',
-    distanceKm: 1.2,
-  },
-  {
-    id: '3',
-    venueId: 'v2',
-    seriesId: null,
-    name: 'STAUNEN \u2014 Die Zaubershow',
-    slug: 'staunen-zaubershow',
-    description: 'Magie hautnah erleben. Eine Show die dich sprachlos macht.',
-    date: new Date(Date.now() + 345600000).toISOString().split('T')[0],
-    time: '19:00',
-    datetime: new Date(Date.now() + 345600000 + 68400000).toISOString(),
-    contingentTotal: 40,
-    contingentSold: 8,
-    contingentRemaining: 32,
-    minPrice: 29,
-    flashPrice: 42,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.30,
-    offerMinPrice: 29,
-    coverImageUrl: MOCK_IMAGES.staunen,
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live',
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Variet\u00e9-Theater Bonn',
-    distanceKm: 85,
-  },
-  {
-    id: '5',
-    venueId: 'v1',
-    seriesId: null,
-    name: 'COSMOS \u2014 Reise durch die Galaxie',
-    slug: 'cosmos-reise-galaxie',
-    description: 'Eine interstellare Variet\u00e9-Reise mit atemberaubender Projektionstechnik.',
-    date: new Date(Date.now() + 432000000).toISOString().split('T')[0],
-    time: '20:00',
-    datetime: new Date(Date.now() + 432000000 + 72000000).toISOString(),
-    contingentTotal: 35,
-    contingentSold: 2,
-    contingentRemaining: 33,
-    minPrice: 32,
-    flashPrice: 45,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.30,
-    offerMinPrice: 32,
-    coverImageUrl: MOCK_IMAGES.cosmos,
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live',
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Variet\u00e9-Theater Bonn',
-    distanceKm: 85,
-  },
-]
+const HERO_FALLBACK = 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=800&fit=crop&q=80'
 
-export default function HomePage() {
-  const featuredEvent = mockEvents[0]
-  const nearbyEvents = mockEvents.filter(e => (e.distanceKm ?? 999) < 10)
-  const otherEvents = mockEvents.filter(e => (e.distanceKm ?? 999) >= 10)
+function getFallbackImage(eventName: string): string {
+  const lower = eventName.toLowerCase()
+  for (const [key, url] of Object.entries(FALLBACK_IMAGES)) {
+    if (lower.includes(key)) return url
+  }
+  return HERO_FALLBACK
+}
+
+// Map snake_case DB row to camelCase Event type
+function mapEvent(row: Record<string, unknown>): Event & { venueName?: string; venueCity?: string; distanceKm?: number } {
+  const venueName = row.venues && typeof row.venues === 'object' ? (row.venues as Record<string, unknown>).name as string : undefined
+  const venueCity = row.venues && typeof row.venues === 'object' ? (row.venues as Record<string, unknown>).city as string : undefined
+  const name = row.name as string
+
+  return {
+    id: row.id as string,
+    venueId: row.venue_id as string,
+    seriesId: (row.series_id as string) ?? null,
+    name,
+    slug: row.slug as string,
+    description: (row.description as string) ?? null,
+    date: row.date as string,
+    time: row.time as string,
+    datetime: row.datetime as string,
+    contingentTotal: row.contingent_total as number,
+    contingentSold: row.contingent_sold as number,
+    contingentRemaining: (row.contingent_total as number) - (row.contingent_sold as number),
+    minPrice: row.min_price as number,
+    flashPrice: row.flash_price as number,
+    makeOfferEnabled: row.make_offer_enabled as boolean,
+    offerMaxDiscountPct: (row.offer_max_discount_pct as number) ?? null,
+    offerMinPrice: (row.offer_min_price as number) ?? null,
+    coverImageUrl: (row.cover_image_url as string) || getFallbackImage(name),
+    videoUrl: (row.video_url as string) ?? null,
+    tixuEventId: (row.tixu_event_id as string) ?? null,
+    tixuTotalCapacity: (row.tixu_total_capacity as number) ?? null,
+    tixuTotalSold: (row.tixu_total_sold as number) ?? null,
+    status: row.status as Event['status'],
+    publishedAt: (row.published_at as string) ?? null,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+    venueName,
+    venueCity,
+    // Placeholder distance — in production use user geolocation
+    distanceKm: venueCity === 'Essen' ? 1.2 : 85,
+  }
+}
+
+export default async function HomePage() {
+  const supabase = await createClient()
+
+  const { data: rows, error } = await supabase
+    .from('events')
+    .select('*, venues(name, city, address, lat, lng)')
+    .eq('status', 'live')
+    .order('datetime', { ascending: true })
+
+  const events = (rows ?? []).map(mapEvent)
+
+  const featuredEvent = events[0]
+  const nearbyEvents = events.filter(e => (e.distanceKm ?? 999) < 10)
+  const otherEvents = events.filter(e => (e.distanceKm ?? 999) >= 10)
+
+  if (!featuredEvent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 text-center">
+        <div>
+          <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Keine Events verfügbar</h2>
+          <p className="text-sm text-[var(--text-secondary)]">
+            {error ? `Fehler: ${error.message}` : 'Aktuell gibt es keine live Events. Schau später nochmal vorbei!'}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen pb-32">
@@ -187,7 +106,7 @@ export default function HomePage() {
       {/* Category Pills */}
       <section className="px-4 mt-6">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {['Alle', 'Heute', 'Variet\u00e9', 'Comedy', 'Konzert', 'Theater', 'Family'].map((cat, i) => (
+          {['Alle', 'Heute', 'Varieté', 'Comedy', 'Konzert', 'Theater', 'Family'].map((cat, i) => (
             <button
               key={cat}
               className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200"
@@ -211,12 +130,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Nearby Events — In deiner N\u00e4he */}
+      {/* Nearby Events — In deiner Nähe */}
       {nearbyEvents.length > 1 && (
         <section className="mt-8 px-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">In deiner N\u00e4he</h2>
+              <h2 className="text-lg font-bold text-[var(--text-primary)]">In deiner Nähe</h2>
               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Essen &middot; unter 10 km</p>
             </div>
             <button className="text-xs font-medium text-[#A855F7]">
@@ -245,11 +164,11 @@ export default function HomePage() {
             />
             <h2 className="text-lg font-bold text-[var(--text-primary)]">Beliebt gerade</h2>
           </div>
-          <span className="text-xs text-[var(--text-tertiary)]">{mockEvents.length} Events</span>
+          <span className="text-xs text-[var(--text-tertiary)]">{events.length} Events</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {mockEvents.slice(1, 3).map((event) => (
+          {events.slice(1, 3).map((event) => (
             <EventCard key={event.id} event={event} variant="large" />
           ))}
         </div>

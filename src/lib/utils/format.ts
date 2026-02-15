@@ -48,10 +48,10 @@ export function getCountdown(dateString: string): string {
     return formatDistanceToNow(date, { locale: de, addSuffix: true })
   }
   if (hours > 0) {
-    return `Show in ${hours}h ${minutes}m`
+    return `Noch ${hours}h ${minutes}m`
   }
   if (minutes > 0) {
-    return `Show in ${minutes}m`
+    return `Noch ${minutes}m`
   }
   return 'Jetzt!'
 }

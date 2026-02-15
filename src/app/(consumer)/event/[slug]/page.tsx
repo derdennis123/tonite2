@@ -3,161 +3,27 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { LiveViewerCount, BookingToast } from '@/components/consumer/LiveActivity'
 import { formatPrice, formatDateFull, formatTime, getScarcityLevel, getScarcityText, getCountdown } from '@/lib/utils/format'
+import { createClient } from '@/lib/supabase/server'
 import type { Event } from '@/types'
 
-// Same mock data - in production this comes from Supabase
-const mockEvents: (Event & { venueName: string; venueAddress?: string })[] = [
-  {
-    id: '1',
-    venueId: 'v1',
-    seriesId: null,
-    name: 'IGNITE — Die Varieté-Show',
-    slug: 'ignite-variete-show',
-    description: 'Eine atemberaubende Varieté-Show mit Weltklasse-Artisten, Magie und Live-Musik. Ein Abend voller Staunen und Unterhaltung. Erlebe die neue Show im GOP Varieté-Theater Essen — mit internationalen Künstlern, die dich in ihren Bann ziehen werden.',
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-    time: '19:30',
-    datetime: new Date(Date.now() + 86400000 + 70200000).toISOString(),
-    contingentTotal: 30,
-    contingentSold: 18,
-    contingentRemaining: 12,
-    minPrice: 35,
-    flashPrice: 49,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.30,
-    offerMinPrice: 35,
-    coverImageUrl: '',
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live' as const,
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Varieté-Theater Essen',
-    venueAddress: 'Rottstr. 30, 45127 Essen',
-  },
-  {
-    id: '2',
-    venueId: 'v1',
-    seriesId: null,
-    name: 'PASSION — Tanz & Akrobatik',
-    slug: 'passion-tanz-akrobatik',
-    description: 'Eine leidenschaftliche Show die Tanz, Akrobatik und Emotionen vereint.',
-    date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-    time: '20:00',
-    datetime: new Date(Date.now() + 172800000 + 72000000).toISOString(),
-    contingentTotal: 25,
-    contingentSold: 20,
-    contingentRemaining: 5,
-    minPrice: 39,
-    flashPrice: 55,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.25,
-    offerMinPrice: 39,
-    coverImageUrl: '',
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live' as const,
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Varieté-Theater Essen',
-    venueAddress: 'Rottstr. 30, 45127 Essen',
-  },
-  {
-    id: '3',
-    venueId: 'v2',
-    seriesId: null,
-    name: 'STAUNEN — Die Zaubershow',
-    slug: 'staunen-zaubershow',
-    description: 'Magie hautnah erleben. Eine Show die dich sprachlos macht.',
-    date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
-    time: '19:00',
-    datetime: new Date(Date.now() + 259200000 + 68400000).toISOString(),
-    contingentTotal: 40,
-    contingentSold: 8,
-    contingentRemaining: 32,
-    minPrice: 29,
-    flashPrice: 42,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.30,
-    offerMinPrice: 29,
-    coverImageUrl: '',
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live' as const,
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Varieté-Theater Bonn',
-    venueAddress: 'Münsterplatz 17, 53111 Bonn',
-  },
-  {
-    id: '4',
-    venueId: 'v2',
-    seriesId: null,
-    name: 'ELECTRA — Die Neon-Show',
-    slug: 'electra-neon-show',
-    description: 'UV-Licht, Neon-Kostüme und atemberaubende Performances in einer einzigartigen Atmosphäre.',
-    date: new Date(Date.now() + 345600000).toISOString().split('T')[0],
-    time: '21:00',
-    datetime: new Date(Date.now() + 345600000 + 75600000).toISOString(),
-    contingentTotal: 20,
-    contingentSold: 17,
-    contingentRemaining: 3,
-    minPrice: 45,
-    flashPrice: 65,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.20,
-    offerMinPrice: 45,
-    coverImageUrl: '',
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live' as const,
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Varieté-Theater Essen',
-    venueAddress: 'Rottstr. 30, 45127 Essen',
-  },
-  {
-    id: '5',
-    venueId: 'v1',
-    seriesId: null,
-    name: 'COSMOS — Reise durch die Galaxie',
-    slug: 'cosmos-reise-galaxie',
-    description: 'Eine interstellare Varieté-Reise mit atemberaubender Projektionstechnik und Weltklasse-Artistik.',
-    date: new Date(Date.now() + 432000000).toISOString().split('T')[0],
-    time: '20:00',
-    datetime: new Date(Date.now() + 432000000 + 72000000).toISOString(),
-    contingentTotal: 35,
-    contingentSold: 2,
-    contingentRemaining: 33,
-    minPrice: 32,
-    flashPrice: 45,
-    makeOfferEnabled: true,
-    offerMaxDiscountPct: 0.30,
-    offerMinPrice: 32,
-    coverImageUrl: '',
-    videoUrl: null,
-    tixuEventId: null,
-    tixuTotalCapacity: null,
-    tixuTotalSold: null,
-    status: 'live' as const,
-    publishedAt: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    venueName: 'GOP Varieté-Theater Bonn',
-    venueAddress: 'Münsterplatz 17, 53111 Bonn',
-  },
-]
+// Fallback images when DB events have no cover image
+const FALLBACK_IMAGES: Record<string, string> = {
+  'ignite': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop&q=80',
+  'passion': 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?w=800&h=600&fit=crop&q=80',
+  'staunen': 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=800&h=600&fit=crop&q=80',
+  'electra': 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=600&fit=crop&q=80',
+  'cosmos': 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop&q=80',
+}
+
+const HERO_FALLBACK = 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=1200&h=800&fit=crop&q=80'
+
+function getFallbackImage(eventName: string): string {
+  const lower = eventName.toLowerCase()
+  for (const [key, url] of Object.entries(FALLBACK_IMAGES)) {
+    if (lower.includes(key)) return url
+  }
+  return HERO_FALLBACK
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -165,16 +31,29 @@ interface PageProps {
 
 export default async function EventDetailPage({ params }: PageProps) {
   const { slug } = await params
-  const event = mockEvents.find((e) => e.slug === slug)
+  const supabase = await createClient()
 
-  if (!event) {
+  const { data: row } = await supabase
+    .from('events')
+    .select('*, venues(name, address, city)')
+    .eq('slug', slug)
+    .single()
+
+  if (!row) {
     notFound()
   }
 
-  const remaining = event.contingentTotal - event.contingentSold
+  const venueData = row.venues as { name: string; address: string; city: string } | { name: string; address: string; city: string }[] | null
+  const venue = venueData ? (Array.isArray(venueData) ? venueData[0] : venueData) : null
+  const venueName = venue?.name ?? 'Unbekannter Veranstaltungsort'
+  const venueAddress = venue?.address ?? undefined
+  const name = row.name as string
+  const coverImageUrl = (row.cover_image_url as string) || getFallbackImage(name)
+
+  const remaining = (row.contingent_total as number) - (row.contingent_sold as number)
   const scarcityLevel = getScarcityLevel(remaining)
   const scarcityText = getScarcityText(remaining)
-  const countdown = getCountdown(event.datetime)
+  const countdown = getCountdown(row.datetime as string)
 
   const scarcityColors: Record<string, string> = {
     available: '#34C759',
@@ -187,23 +66,14 @@ export default async function EventDetailPage({ params }: PageProps) {
     <div className="min-h-screen -mt-14">
       {/* Hero Image */}
       <div className="relative h-[50vh] min-h-[350px] max-h-[500px] overflow-hidden">
-        {event.coverImageUrl ? (
-          <Image
-            src={event.coverImageUrl}
-            alt={event.name}
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-        ) : (
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(135deg, #1A1A2E 0%, #0A0A0F 50%, #6C5CE7 200%)',
-            }}
-          />
-        )}
+        <Image
+          src={coverImageUrl}
+          alt={name}
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/50 to-transparent" />
 
         {/* Back button */}
@@ -241,10 +111,10 @@ export default async function EventDetailPage({ params }: PageProps) {
         {/* Event Info */}
         <div className="space-y-3">
           <h1 className="text-2xl md:text-3xl font-bold text-white">
-            {event.name}
+            {name}
           </h1>
           <p className="text-base text-[var(--text-secondary)]">
-            {event.venueName} · {formatDateFull(event.datetime)} · {formatTime(event.datetime)} Uhr
+            {venueName} · {formatDateFull(row.datetime as string)} · {formatTime(row.datetime as string)} Uhr
           </p>
 
           {/* Scarcity */}
@@ -263,7 +133,7 @@ export default async function EventDetailPage({ params }: PageProps) {
               />
               {scarcityText}
             </span>
-            <LiveViewerCount eventId={event.id} />
+            <LiveViewerCount eventId={row.id as string} />
           </div>
         </div>
 
@@ -287,13 +157,13 @@ export default async function EventDetailPage({ params }: PageProps) {
                   WebkitTextFillColor: 'transparent',
                 }}
               >
-                {formatPrice(event.flashPrice)}
+                {formatPrice(row.flash_price as number)}
               </p>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">pro Ticket</p>
             </div>
           </div>
           <Link
-            href={`/checkout?event=${event.id}&price=${event.flashPrice}&channel=flash`}
+            href={`/checkout?event=${row.id}&price=${row.flash_price}&channel=flash`}
             className="block w-full text-center py-4 rounded-xl text-base font-semibold text-white transition-all duration-300 hover:scale-[1.02]"
             style={{
               background: 'linear-gradient(135deg, #6C5CE7, #A855F7)',
@@ -305,7 +175,7 @@ export default async function EventDetailPage({ params }: PageProps) {
         </div>
 
         {/* Make-an-Offer CTA */}
-        {event.makeOfferEnabled && (
+        {row.make_offer_enabled && (
           <div
             className="p-5 rounded-2xl space-y-3"
             style={{
@@ -318,7 +188,7 @@ export default async function EventDetailPage({ params }: PageProps) {
               <p className="text-sm text-[var(--text-secondary)] mt-0.5">Nenn deinen Preis</p>
             </div>
             <Link
-              href={`/event/${event.slug}/offer`}
+              href={`/event/${row.slug}/offer`}
               className="block w-full text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:bg-[var(--bg-glass-hover)]"
               style={{
                 background: 'rgba(255, 255, 255, 0.05)',
@@ -344,7 +214,7 @@ export default async function EventDetailPage({ params }: PageProps) {
             <p className="text-sm text-[var(--text-secondary)] mt-0.5">Mehr Leute = mehr Rabatt</p>
           </div>
           <Link
-            href={`/checkout?event=${event.id}&price=${event.flashPrice}&channel=crew`}
+            href={`/checkout?event=${row.id}&price=${row.flash_price}&channel=crew`}
             className="block w-full text-center py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:bg-[var(--bg-glass-hover)]"
             style={{
               background: 'rgba(255, 255, 255, 0.05)',
@@ -378,13 +248,13 @@ export default async function EventDetailPage({ params }: PageProps) {
         </div>
 
         {/* Description */}
-        {event.description && (
+        {row.description && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-[var(--text-primary)] uppercase tracking-wider">
               Über das Event
             </h3>
             <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-              {event.description}
+              {row.description}
             </p>
           </div>
         )}
@@ -402,10 +272,10 @@ export default async function EventDetailPage({ params }: PageProps) {
               <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
               <circle cx="12" cy="10" r="3" />
             </svg>
-            <span className="text-sm font-medium text-[var(--text-primary)]">{event.venueName}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">{venueName}</span>
           </div>
-          {event.venueAddress && (
-            <p className="text-xs text-[var(--text-secondary)] ml-6">{event.venueAddress}</p>
+          {venueAddress && (
+            <p className="text-xs text-[var(--text-secondary)] ml-6">{venueAddress}</p>
           )}
           <button
             className="ml-6 text-xs font-medium transition-colors"
@@ -417,25 +287,34 @@ export default async function EventDetailPage({ params }: PageProps) {
       </div>
 
       {/* Booking Toast */}
-      <BookingToast eventId={event.id} />
+      <BookingToast eventId={row.id as string} />
     </div>
   )
 }
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
-  const event = mockEvents.find((e) => e.slug === slug)
+  const supabase = await createClient()
+
+  const { data: event } = await supabase
+    .from('events')
+    .select('name, description, slug, venues(name)')
+    .eq('slug', slug)
+    .single()
 
   if (!event) {
     return { title: 'Event nicht gefunden' }
   }
 
+  const venues = event.venues as { name: string } | { name: string }[] | null
+  const venueName = venues ? (Array.isArray(venues) ? venues[0]?.name : venues.name) : ''
+
   return {
     title: `${event.name} | TONITE`,
-    description: event.description || `${event.name} bei ${event.venueName}`,
+    description: event.description || `${event.name} bei ${venueName}`,
     openGraph: {
       title: event.name,
-      description: event.description || `${event.name} bei ${event.venueName}`,
+      description: event.description || `${event.name} bei ${venueName}`,
       type: 'website',
       locale: 'de_DE',
     },
