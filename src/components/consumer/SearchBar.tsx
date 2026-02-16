@@ -37,7 +37,7 @@ export function SearchBar({ onSearch, isSearching }: SearchBarProps) {
       <form onSubmit={handleSubmit} className="relative">
         <div
           className={cn(
-            'flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300',
+            'flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300',
           )}
           style={{
             background: isFocused ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.04)',
@@ -103,12 +103,12 @@ export function SearchBar({ onSearch, isSearching }: SearchBarProps) {
 
       {/* Quick Suggestions */}
       {!query && (
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
           {suggestions.map((suggestion) => (
             <button
               key={suggestion}
               onClick={() => handleSuggestion(suggestion)}
-              className="flex-shrink-0 px-3.5 py-2 rounded-full text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
+              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 hover:scale-[1.02]"
               style={{
                 background: 'rgba(255, 255, 255, 0.04)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',

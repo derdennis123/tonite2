@@ -53,7 +53,7 @@ export function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
       <div
-        className="mx-4 mb-4 rounded-2xl flex items-center justify-around px-2 py-2.5"
+        className="mx-3 mb-2 rounded-2xl flex items-center justify-around px-2 py-1.5"
         style={{
           background: 'rgba(18, 18, 26, 0.8)',
           backdropFilter: 'blur(24px)',
@@ -72,7 +72,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-xl transition-all duration-300 min-w-[56px]',
+                'flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all duration-300 min-w-[56px]',
                 isActive
                   ? 'text-white'
                   : 'text-[var(--text-tertiary)]'

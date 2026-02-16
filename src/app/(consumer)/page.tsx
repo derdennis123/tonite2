@@ -185,7 +185,7 @@ export default function HomePage() {
       </section>
 
       {/* Category Pills */}
-      <section className="px-4 mt-6">
+      <section className="px-4 mt-4">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {['Alle', 'Heute', 'Variet\u00e9', 'Comedy', 'Konzert', 'Theater', 'Family'].map((cat, i) => (
             <button
@@ -213,10 +213,10 @@ export default function HomePage() {
 
       {/* Nearby Events — In deiner N\u00e4he */}
       {nearbyEvents.length > 1 && (
-        <section className="mt-8 px-4">
-          <div className="flex items-center justify-between mb-4">
+        <section className="mt-6 px-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">In deiner N\u00e4he</h2>
+              <h2 className="text-base font-bold text-[var(--text-primary)]">In deiner N\u00e4he</h2>
               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Essen &middot; unter 10 km</p>
             </div>
             <button className="text-xs font-medium text-[#A855F7]">
@@ -236,14 +236,14 @@ export default function HomePage() {
       )}
 
       {/* Hot Events — Two-column grid */}
-      <section className="mt-10 px-4">
-        <div className="flex items-center justify-between mb-4">
+      <section className="mt-8 px-4">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span
               className="w-2 h-2 rounded-full animate-pulse"
               style={{ background: '#FF453A' }}
             />
-            <h2 className="text-lg font-bold text-[var(--text-primary)]">Beliebt gerade</h2>
+            <h2 className="text-base font-bold text-[var(--text-primary)]">Beliebt gerade</h2>
           </div>
           <span className="text-xs text-[var(--text-tertiary)]">{mockEvents.length} Events</span>
         </div>
@@ -257,10 +257,10 @@ export default function HomePage() {
 
       {/* Further away section */}
       {otherEvents.length > 0 && (
-        <section className="mt-10 px-4">
-          <div className="flex items-center justify-between mb-4">
+        <section className="mt-8 px-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">Weitere Events</h2>
+              <h2 className="text-base font-bold text-[var(--text-primary)]">Weitere Events</h2>
               <p className="text-xs text-[var(--text-tertiary)] mt-0.5">Bonn &amp; Umgebung</p>
             </div>
           </div>
