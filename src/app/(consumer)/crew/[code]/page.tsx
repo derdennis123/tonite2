@@ -1,26 +1,25 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils/cn'
 import { getCrewDiscount, getNextCrewThreshold, formatPrice } from '@/lib/utils/format'
 
 interface PageProps {
   params: Promise<{ code: string }>
 }
 
-// Mock crew data
-const mockCrew = {
-  id: 'crew1',
-  invite_code: 'abc123',
-  event_name: 'IGNITE — Die Varieté-Show',
-  venue_name: 'GOP Varieté-Theater Essen',
-  flash_price: 49,
-  members: [
-    { id: 'm1', name: 'Max M.', status: 'paid' as const },
-    { id: 'm2', name: 'Julia S.', status: 'joined' as const },
-  ],
-  status: 'open' as const,
+interface CrewData {
+  id: string
+  invite_code: string
+  event_name: string
+  venue_name: string
+  flash_price: number
+  status: 'open' | 'locked' | 'completed' | 'expired'
+  members: Array<{
+    id: string
+    name: string
+    status: 'joined' | 'paid' | 'dropped'
+  }>
 }
 
 const discountTiers = [
@@ -33,11 +32,46 @@ const discountTiers = [
 export default function CrewLobbyPage({ params }: PageProps) {
   const { code } = use(params)
   const [copied, setCopied] = useState(false)
+  const [crew, setCrew] = useState<CrewData | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const memberCount = mockCrew.members.length
+  useEffect(() => {
+    async function fetchCrew() {
+      try {
+        const response = await fetch(`/api/crew?code=${encodeURIComponent(code)}`)
+        if (response.ok) {
+          const data = await response.json()
+          setCrew(data)
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCrew()
+  }, [code])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--accent-primary)] border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+
+  if (!crew) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Crew nicht gefunden</h2>
+        <p className="text-sm text-[var(--text-secondary)] mb-6">Der Einladungslink ist ungültig oder abgelaufen.</p>
+        <Link href="/" className="text-sm font-medium" style={{ color: '#6C5CE7' }}>Zurück zur Startseite</Link>
+      </div>
+    )
+  }
+
+  const memberCount = crew.members.length
   const currentDiscount = getCrewDiscount(memberCount)
   const nextThreshold = getNextCrewThreshold(memberCount)
-  const discountedPrice = mockCrew.flash_price * (1 - currentDiscount)
+  const discountedPrice = crew.flash_price * (1 - currentDiscount)
   const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/crew/${code}`
 
   const copyLink = () => {
@@ -47,7 +81,7 @@ export default function CrewLobbyPage({ params }: PageProps) {
   }
 
   const shareWhatsApp = () => {
-    const text = `Hey! Ich hab eine Crew für ${mockCrew.event_name} gestartet. Tritt bei und wir bekommen alle Rabatt! ${shareUrl}`
+    const text = `Hey! Ich hab eine Crew für ${crew.event_name} gestartet. Tritt bei und wir bekommen alle Rabatt! ${shareUrl}`
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
   }
 
@@ -59,7 +93,7 @@ export default function CrewLobbyPage({ params }: PageProps) {
         </Link>
         <div>
           <h1 className="text-xl font-semibold text-[var(--text-primary)]">Crew</h1>
-          <p className="text-sm text-[var(--text-secondary)]">{mockCrew.event_name}</p>
+          <p className="text-sm text-[var(--text-secondary)]">{crew.event_name}</p>
         </div>
       </div>
 
@@ -97,7 +131,7 @@ export default function CrewLobbyPage({ params }: PageProps) {
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-[var(--text-secondary)]">Mitglieder ({memberCount})</p>
         </div>
-        {mockCrew.members.map((member) => (
+        {crew.members.map((member) => (
           <div key={member.id} className="p-3 rounded-xl flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A855F7)' }}>
@@ -114,16 +148,16 @@ export default function CrewLobbyPage({ params }: PageProps) {
 
       {/* Share Actions */}
       <div className="space-y-3">
-        <button onClick={shareWhatsApp} className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all" style={{ background: '#25D366' }}>
+        <button type="button" onClick={shareWhatsApp} className="w-full py-3.5 rounded-xl text-sm font-semibold text-white transition-all" style={{ background: '#25D366' }}>
           Via WhatsApp teilen
         </button>
-        <button onClick={copyLink} className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)' }}>
+        <button type="button" onClick={copyLink} className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)' }}>
           {copied ? 'Link kopiert!' : 'Link kopieren'}
         </button>
       </div>
 
       {/* Book CTA */}
-      <Link href={`/checkout?event=${mockCrew.id}&price=${discountedPrice}&channel=crew`} className="block w-full text-center py-4 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A855F7)', boxShadow: '0 0 20px rgba(108,92,231,0.3)' }}>
+      <Link href={`/checkout?event=${crew.id}&price=${discountedPrice}&channel=crew`} className="block w-full text-center py-4 rounded-xl text-base font-semibold text-white" style={{ background: 'linear-gradient(135deg, #6C5CE7, #A855F7)', boxShadow: '0 0 20px rgba(108,92,231,0.3)' }}>
         Jetzt buchen — {formatPrice(discountedPrice)}
       </Link>
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils/cn'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 interface Message {
   id: string
@@ -20,6 +21,7 @@ interface OfferChatProps {
 }
 
 export function OfferChat({ eventId, eventName, flashPrice, maxAttempts = 3 }: OfferChatProps) {
+  const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -40,7 +42,7 @@ export function OfferChat({ eventId, eventName, flashPrice, maxAttempts = 3 }: O
   }, [messages])
 
   const sendOffer = async () => {
-    if (!input.trim() || loading || attempts >= maxAttempts || dealAccepted) return
+    if (!input.trim() || loading || attempts >= maxAttempts || dealAccepted || !user) return
 
     const priceMatch = input.match(/(\d+)/)
     if (!priceMatch) {
@@ -73,7 +75,7 @@ export function OfferChat({ eventId, eventName, flashPrice, maxAttempts = 3 }: O
           event_id: eventId,
           ticket_count: ticketCount,
           offered_price: offeredPrice,
-          customer_id: 'demo-user', // In production: from auth
+          customer_id: user?.id || '',
         }),
       })
 
@@ -120,6 +122,7 @@ export function OfferChat({ eventId, eventName, flashPrice, maxAttempts = 3 }: O
                 {[1, 2, 3, 4].map((n) => (
                   <button
                     key={n}
+                    type="button"
                     onClick={() => setTicketCount(n)}
                     className="w-7 h-7 rounded-lg text-xs font-semibold transition-all"
                     style={
@@ -186,7 +189,7 @@ export function OfferChat({ eventId, eventName, flashPrice, maxAttempts = 3 }: O
         {attempts >= maxAttempts && !dealAccepted ? (
           <div className="text-center py-2">
             <p className="text-sm text-[var(--text-secondary)]">Keine Versuche mehr übrig</p>
-            <button className="mt-2 text-xs font-medium" style={{ color: '#6C5CE7' }}>
+            <button type="button" className="mt-2 text-xs font-medium" style={{ color: '#6C5CE7' }}>
               Benachrichtige mich bei passenden Deals
             </button>
           </div>
@@ -205,13 +208,15 @@ export function OfferChat({ eventId, eventName, flashPrice, maxAttempts = 3 }: O
               placeholder="Dein Preisvorschlag..."
               className="flex-1 px-4 py-3 rounded-xl text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
               style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-              disabled={loading}
+              disabled={loading || !user}
             />
             <button
+              type="button"
               onClick={sendOffer}
-              disabled={loading || !input.trim()}
+              disabled={loading || !input.trim() || !user}
               className="px-4 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg, #6C5CE7, #A855F7)' }}
+              aria-label="Angebot senden"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" />

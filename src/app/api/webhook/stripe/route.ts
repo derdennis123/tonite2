@@ -11,6 +11,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  if (!webhookSecret) {
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+  }
+
   let stripeEvent: Stripe.Event
 
   try {
@@ -18,10 +23,9 @@ export async function POST(request: NextRequest) {
     stripeEvent = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     )
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err)
+  } catch {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -77,7 +81,6 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (bookingError) {
-      console.error('Booking creation failed:', bookingError)
       return NextResponse.json({ error: 'Booking creation failed' }, { status: 500 })
     }
 
@@ -91,11 +94,8 @@ export async function POST(request: NextRequest) {
 
     await supabase.from('tickets').insert(tickets)
 
-    // Update event sold count
-    await supabase
-      .from('events')
-      .update({ contingent_sold: event.contingent_sold + ticketCount })
-      .eq('id', eventId)
+    // Atomic increment of event sold count
+    await supabase.rpc('increment_event_sold', { p_event_id: eventId, p_count: ticketCount })
 
     // Check if sold out
     if (event.contingent_sold + ticketCount >= event.contingent_total) {

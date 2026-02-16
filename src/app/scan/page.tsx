@@ -25,8 +25,8 @@ export default function ScanPage() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream
         }
-      } catch (err) {
-        console.log('Camera access denied:', err)
+      } catch {
+        // Camera access denied
       }
     }
     startCamera()
