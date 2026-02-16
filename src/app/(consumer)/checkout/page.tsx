@@ -45,8 +45,8 @@ function CheckoutForm() {
       if (data.url) {
         window.location.href = data.url
       }
-    } catch (error) {
-      console.error('Checkout error:', error)
+    } catch {
+      // Checkout error handled silently
     } finally {
       setLoading(false)
     }

@@ -99,8 +99,7 @@ export async function POST(request: NextRequest) {
       attempt_number: attemptNumber,
       attempts_remaining: 3 - attemptNumber,
     })
-  } catch (error) {
-    console.error('Offer error:', error)
+  } catch {
     return NextResponse.json(
       { error: 'Fehler bei der Verhandlung' },
       { status: 500 }

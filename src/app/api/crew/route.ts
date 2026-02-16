@@ -2,6 +2,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCrewDiscount } from '@/lib/utils/format'
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const code = searchParams.get('code')
+
+    if (!code) {
+      return NextResponse.json({ error: 'Code ist erforderlich' }, { status: 400 })
+    }
+
+    const supabase = createAdminClient()
+
+    const { data: crew, error } = await supabase
+      .from('crews')
+      .select(`
+        *,
+        crew_members(id, customer_id, status, customers(first_name, last_name)),
+        events(name, flash_price, venues(name))
+      `)
+      .eq('invite_code', code)
+      .single()
+
+    if (error || !crew) {
+      return NextResponse.json({ error: 'Crew nicht gefunden' }, { status: 404 })
+    }
+
+    return NextResponse.json({
+      id: crew.id,
+      invite_code: crew.invite_code,
+      event_name: crew.events?.name || '',
+      venue_name: crew.events?.venues?.name || '',
+      flash_price: crew.events?.flash_price || 0,
+      status: crew.status,
+      members: (crew.crew_members || []).map((m: { id: string; status: string; customers?: { first_name?: string; last_name?: string } }) => ({
+        id: m.id,
+        name: `${m.customers?.first_name || ''} ${(m.customers?.last_name || '')[0] || ''}.`.trim(),
+        status: m.status,
+      })),
+    })
+  } catch {
+    return NextResponse.json({ error: 'Crew-Fehler' }, { status: 500 })
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -83,8 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: 'Ungültige Aktion' }, { status: 400 })
-  } catch (error) {
-    console.error('Crew error:', error)
+  } catch {
     return NextResponse.json({ error: 'Crew-Fehler' }, { status: 500 })
   }
 }

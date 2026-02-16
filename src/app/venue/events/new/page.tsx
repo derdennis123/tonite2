@@ -13,8 +13,8 @@ export default function CreateEventPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // In production: save to Supabase
-    console.log('Creating event:', formData)
+    // TODO: Save to Supabase
+    void formData
   }
 
   return (

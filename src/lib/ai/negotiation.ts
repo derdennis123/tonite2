@@ -4,9 +4,12 @@ let _anthropic: Anthropic | null = null
 
 async function getAnthropic(): Promise<Anthropic> {
   if (!_anthropic) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error('ANTHROPIC_API_KEY environment variable is not set')
+    }
     const { default: Anthropic } = await import('@anthropic-ai/sdk')
     _anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY!,
+      apiKey: process.env.ANTHROPIC_API_KEY,
     })
   }
   return _anthropic
