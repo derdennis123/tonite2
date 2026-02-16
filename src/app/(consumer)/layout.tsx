@@ -7,7 +7,7 @@ export default function ConsumerLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen pb-24 md:pb-0">
+    <div className="min-h-screen pb-20 md:pb-0">
       <TopBar />
       <main className="pt-14">
         {children}

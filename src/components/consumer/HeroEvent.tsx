@@ -50,7 +50,7 @@ export function HeroEvent({ event }: HeroEventProps) {
         </div>
 
         {/* Content */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 space-y-3">
+        <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
           {/* Scarcity */}
           {scarcityLevel !== 'available' && (
             <span
