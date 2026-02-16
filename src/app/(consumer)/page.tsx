@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { HeroEvent } from '@/components/consumer/HeroEvent'
 import { EventCard } from '@/components/consumer/EventCard'
 import { SearchBar } from '@/components/consumer/SearchBar'
